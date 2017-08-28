@@ -78,10 +78,11 @@ func editorRefreshScreen() {
     // \u{1b} is used instead of \x1b due to \x not being valid in swift
     // \u{1b}[2J clears and refreshed the terminal
 //    write(STDOUT_FILENO, "\u{1b}[2J", 4)
+//    write(STDOUT_FILENO, "\u{1b}[H", 3)
     // print will work but need an update (such as newline) to be seen
     // still test functionality
     print("\u{1b}[2J", terminator: "")
-    print("t", terminator: "")
+    print("\u{1b}[H", terminator: "")
     
 }
 
