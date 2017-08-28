@@ -48,9 +48,10 @@ func enableRawMode() {
     if tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1 { die(str: "tcsetattr") }
 }
 
-// ------------------
-// Code for user view
-// ------------------
+// -------------------
+// Code for user input/output
+// -------------------
+
 
 func editorReadKey() -> Int32 {
     var c:Int32 = 0
@@ -71,6 +72,16 @@ func editorProcessKeypress() {
     default:
         break
     }
+}
+
+func editorRefreshScreen() {
+    // \u{1b} is used instead of \x1b due to \x not being valid in swift
+    // \u{1b}[2J clears and refreshed the terminal
+//    write(STDOUT_FILENO, "\u{1b}[2J", 4)
+    // print will work but need an update (such as newline) to be seen
+    // still test functionality
+    print("\u{1b}[2J", terminator: "")
+    print("t", terminator: "")
     
 }
 
@@ -80,5 +91,6 @@ func editorProcessKeypress() {
 enableRawMode()
 
 while true {
+    editorRefreshScreen()
     editorProcessKeypress()
 }
