@@ -3,25 +3,49 @@ import Foundation // Using Foundation contains all the C libraies needed (altern
 // -----------------------
 // Setup code for raw mode
 // -----------------------
-var orig_termios = termios()
+
+struct editorConfig {
+    var orig_termios:termios
+    private var ws:winsize
+    var screenrows:Int
+    var screencols:Int
+    init() {
+        orig_termios = termios()
+        ws = winsize()
+        // currently not checking for error
+        // deciding not to implement hard way method
+        _ = ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &ws)
+        screenrows = Int(ws.ws_row)
+        screencols = Int(ws.ws_col)
+    }
+    
+    
+}
+
+var E = editorConfig()
 
 func die(str:UnsafePointer<Int8>!) {
+    write(STDOUT_FILENO, "\u{1b}[2J", 4)
+    write(STDOUT_FILENO, "\u{1b}[H", 3)
+//    print("\u{1b}[2J", terminator: "")
+//    print("\u{1b}[H", terminator: "")
+    
     perror(str)
     exit(1)
 }
 
 func disableRawMode() {
-    if tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1 {
+    if tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1 {
         die(str: "tcsetattr")
     }
 }
 
 func enableRawMode() {
-    if tcgetattr(STDIN_FILENO, &orig_termios) == -1 { die(str: "tcsetattr") }
+    if tcgetattr(STDIN_FILENO, &E.orig_termios) == -1 { die(str: "tcsetattr") }
     atexit { disableRawMode() }
     
     // creating a copy that can be modified so the program can revert to the original on exit
-    var raw = orig_termios
+    var raw = E.orig_termios
 
     //ECHO: prints key pressed into terminal
     //ICANON: Turns off canonical mode changing input from byte to byte to line to line
@@ -68,6 +92,10 @@ func editorProcessKeypress() {
     
     switch c {
     case 17:
+        write(STDOUT_FILENO, "\u{1b}[2J", 4)
+        write(STDOUT_FILENO, "\u{1b}[H", 3)
+//        print("\u{1b}[2J", terminator: "")
+//        print("\u{1b}[H", terminator: "")
         exit(0)
     default:
         break
@@ -77,14 +105,32 @@ func editorProcessKeypress() {
 func editorRefreshScreen() {
     // \u{1b} is used instead of \x1b due to \x not being valid in swift
     // \u{1b}[2J clears and refreshed the terminal
-//    write(STDOUT_FILENO, "\u{1b}[2J", 4)
-//    write(STDOUT_FILENO, "\u{1b}[H", 3)
+    write(STDOUT_FILENO, "\u{1b}[2J", 4)
+    write(STDOUT_FILENO, "\u{1b}[H", 3)
     // print will work but need an update (such as newline) to be seen
-    // still test functionality
-    print("\u{1b}[2J", terminator: "")
-    print("\u{1b}[H", terminator: "")
+    // still test functionality seems to preform after the fact
+//    print("\u{1b}[2J", terminator: "")
+//    print("\u{1b}[H", terminator: "")
     
+    editorDrawsRows()
+    
+    write(STDOUT_FILENO, "\u{1b}[H", 3)
+    print("this\r")
+//    print("\u{1b}[H", terminator: "")
 }
+
+func editorDrawsRows() {
+    for i in 0..<E.screenrows {
+        write(STDOUT_FILENO,"~", 1)
+//        print("~", terminator: "")
+        if i < E.screenrows - 1 {
+            write(STDOUT_FILENO, "\r\n", 2)
+//            print("\r")
+        }
+    }
+}
+
+
 
 // -------------------
 // Program begins here
