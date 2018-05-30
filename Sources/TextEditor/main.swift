@@ -29,6 +29,7 @@ func die(str:UnsafePointer<Int8>!) {
     write(STDOUT_FILENO, "\u{1b}[H", 3)
 //    print("\u{1b}[2J", terminator: "")
 //    print("\u{1b}[H", terminator: "")
+    print("\u{1b}[?1049l")
     
     perror(str)
     exit(1)
@@ -96,6 +97,7 @@ func editorProcessKeypress() {
         write(STDOUT_FILENO, "\u{1b}[H", 3)
 //        print("\u{1b}[2J", terminator: "")
 //        print("\u{1b}[H", terminator: "")
+        print("\u{1b}[?1049l", terminator: "")
         exit(0)
     default:
         break
@@ -137,7 +139,16 @@ func editorDrawsRows() {
 // -------------------
 enableRawMode()
 
+//write(STDOUT_FILENO, "\u{1b}[?1049h", 8)
+//uses smcup to access the alternative buffer and work in that
+//need newline char to update properly
+print("\u{1b}[?1049h", terminator: "\n")
+// doesn't work
+//print("\033[?47h", terminator: "")
+
+
 while true {
     editorRefreshScreen()
     editorProcessKeypress()
 }
+
